@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake Game Bulat</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    height: 100vh;
+    background: linear-gradient(135deg, #1a1a1a, #333);
+    margin: 0;
+    font-family: Arial, sans-serif;
+    padding-top: 50px;
+    gap: 20px;
+  }
+  canvas {
+    background-color: #222;
+    display: block;
+    border-radius: 10px;
+  }
+  #scoreboard {
+    color: white;
+    font-size: 20px;
+  }
+</style>
+</head>
+<body>
+<canvas id="game" width="400" height="400"></canvas>
+<div id="scoreboard">Score: 0</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const scoreBoard = document.getElementById('scoreboard');
+
+const gridSize = 20;
+const tileCount = canvas.width / gridSize;
+
+let snake = [{x: 10, y: 10}];
+let velocity = {x: 1, y: 0};
+
+let food = {x: Math.floor(Math.random()*tileCount), y: Math.floor(Math.random()*tileCount)};
+let enemy = {x: Math.floor(Math.random()*tileCount), y: Math.floor(Math.random()*tileCount)};
+let score = 0;
+
+let enemyMoveCounter = 0; // Counter untuk memperlambat musuh
+
+// Input
+document.addEventListener('keydown', e => {
+    switch(e.key){
+        case 'ArrowUp': if(velocity.y === 0){velocity = {x: 0, y: -1}}; break;
+        case 'ArrowDown': if(velocity.y === 0){velocity = {x: 0, y: 1}}; break;
+        case 'ArrowLeft': if(velocity.x === 0){velocity = {x: -1, y: 0}}; break;
+        case 'ArrowRight': if(velocity.x === 0){velocity = {x: 1, y: 0}}; break;
+    }
+});
+
+// Game loop
+function gameLoop(){
+    update();
+    draw();
+    scoreBoard.textContent = "Score: " + score; // update skor di div
+}
+
+function update(){
+    const head = {x: snake[0].x + velocity.x, y: snake[0].y + velocity.y};
+
+    // Collision wall
+    if(head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount){
+        resetGame();
+        return;
+    }
+
+    // Collision self
+    if(snake.some(segment => segment.x === head.x && segment.y === head.y)){
+        resetGame();
+        return;
+    }
+
+    snake.unshift(head);
+
+    // Check food
+    if(head.x === food.x && head.y === food.y){
+        score++;
+        spawnFood();
+    } else {
+        snake.pop();
+    }
+
+    // Enemy bergerak lebih lambat: setiap 2 frame
+    enemyMoveCounter++;
+    if(enemyMoveCounter % 2 === 0){
+        if(enemy.x < food.x) enemy.x++;
+        else if(enemy.x > food.x) enemy.x--;
+        if(enemy.y < food.y) enemy.y++;
+        else if(enemy.y > food.y) enemy.y--;
+    }
+
+    // Enemy “memakan” makanan jika sampai duluan
+    if(enemy.x === food.x && enemy.y === food.y){
+        spawnFood(); // makanan baru muncul
+    }
+
+    // Collision enemy dengan ular
+    if(head.x === enemy.x && head.y === enemy.y){
+        resetGame();
+    }
+}
+
+// Draw background, snake, food, enemy
+function draw(){
+    // Background gradient grid
+    ctx.fillStyle = '#222';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    for(let x=0; x<canvas.width; x+=gridSize){
+        for(let y=0; y<canvas.height; y+=gridSize){
+            ctx.fillStyle = (x/20 + y/20) % 2 === 0 ? '#2a2a2a' : '#1f1f1f';
+            ctx.fillRect(x, y, gridSize, gridSize);
+        }
+    }
+
+    // Draw snake (bulat)
+    ctx.fillStyle = 'lime';
+    snake.forEach(segment => {
+        ctx.beginPath();
+        ctx.arc(segment.x*gridSize + gridSize/2, segment.y*gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI*2);
+        ctx.fill();
+    });
+
+    // Draw food (bulat)
+    ctx.fillStyle = 'yellow';
+    ctx.beginPath();
+    ctx.arc(food.x*gridSize + gridSize/2, food.y*gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI*2);
+    ctx.fill();
+
+    // Draw enemy (bulat)
+    ctx.fillStyle = 'red';
+    ctx.beginPath();
+    ctx.arc(enemy.x*gridSize + gridSize/2, enemy.y*gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI*2);
+    ctx.fill();
+}
+
+function spawnFood(){
+    food.x = Math.floor(Math.random()*tileCount);
+    food.y = Math.floor(Math.random()*tileCount);
+}
+
+function resetGame(){
+    alert('Game Over! Score: ' + score);
+    snake = [{x: 10, y: 10}];
+    velocity = {x: 1, y: 0};
+    score = 0;
+    spawnFood();
+    enemy = {x: Math.floor(Math.random()*tileCount), y: Math.floor(Math.random()*tileCount)};
+    enemyMoveCounter = 0;
+}
+
+// Start game
+setInterval(gameLoop, 120);
+</script>
+</body>
+</html>
